@@ -1,0 +1,26 @@
+name: Deploy Bot to Orihost
+
+on:
+  push:
+    branches:
+      - main  # Change this to "master" if your primary branch is named master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync Files via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: ${{ secrets.SFTP_PORT }}
+          # This ensures it ignores your local git files when transferring
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/__pycache__/**
