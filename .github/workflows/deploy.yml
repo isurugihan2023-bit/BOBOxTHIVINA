@@ -12,13 +12,47 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Normalize deploy inputs
+        shell: bash
+        env:
+          RAW_SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          RAW_SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          RAW_SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          RAW_FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          host="${RAW_SFTP_HOST#sftp://}"
+          host="${host#ftp://}"
+          host="${host#ftps://}"
+          host="${host%%/*}"
+
+          port="${RAW_SFTP_PORT}"
+          if [[ "${host}" == *:* ]]; then
+            extracted_port="${host##*:}"
+            host="${host%%:*}"
+            if [[ -n "${extracted_port}" ]]; then
+              port="${extracted_port}"
+            fi
+          fi
+
+          primary_secret="${RAW_SFTP_PASSWORD}"
+          fallback_secret="${RAW_FTP_PASSWORD}"
+          deploy_secret="${primary_secret}"
+          if [[ -z "${deploy_secret//[[:space:]]/}" ]]; then
+            deploy_secret="${fallback_secret}"
+          fi
+
+          echo "::add-mask::${deploy_secret}"
+          echo "DEPLOY_SERVER=${host}" >> "${GITHUB_ENV}"
+          echo "DEPLOY_PORT=${port}" >> "${GITHUB_ENV}"
+          echo "DEPLOY_PASSWORD=${deploy_secret}" >> "${GITHUB_ENV}"
+
       - name: Sync Files via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.SFTP_HOST }}
+          server: ${{ env.DEPLOY_SERVER }}
           username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD || secrets.FTP_PASSWORD }}
-          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ env.DEPLOY_PASSWORD }}
+          port: ${{ env.DEPLOY_PORT }}
           # This ensures it ignores your local git files when transferring
           exclude: |
             **/.git*
