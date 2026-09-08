@@ -1,0 +1,10 @@
+# Sensitive configuration files (Never upload these)
+.env
+
+# Local python cache folders
+__pycache__/
+*.pyc
+
+# Local log files (if your bot generates them locally)
+logs/
+*.log
