@@ -17,7 +17,7 @@ jobs:
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          password: ${{ secrets.SFTP_PASSWORD || secrets.FTP_PASSWORD }}
           port: ${{ secrets.SFTP_PORT }}
           # This ensures it ignores your local git files when transferring
           exclude: |
